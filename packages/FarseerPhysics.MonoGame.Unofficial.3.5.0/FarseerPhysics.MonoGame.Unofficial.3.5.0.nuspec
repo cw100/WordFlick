@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
+  <metadata>
+    <id>FarseerPhysics.MonoGame.Unofficial</id>
+    <version>3.5.0</version>
+    <title>FarseerPhysics MonoGame (Unofficial Package)</title>
+    <authors>Lukas Boersma</authors>
+    <owners>Lukas Boersma</owners>
+    <licenseUrl>https://farseerphysics.codeplex.com/license</licenseUrl>
+    <projectUrl>https://farseerphysics.codeplex.com/</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Farseer Physics Engine is a collision detection system with realistic physics responses. This means you can create a game or robotic simulation easily using the engine and the associated tools. Everything from a simple hobby game to a complex robotic simulation is possible with Farseer Physics Engine.</description>
+    <summary>Unofficial package of the FarseerPhysics engine.</summary>
+    <copyright>Copyright (c) 2012 Ian Qvist</copyright>
+  </metadata>
+</package>
