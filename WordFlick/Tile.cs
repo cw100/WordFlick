@@ -16,12 +16,12 @@ namespace WordFlick
         public Body tileBody;
         public Animation tileAnimation;
         public Vector2 velocity;
-        
+        public bool usable;
         SpriteFont font;
-        String letter;
+        public String letter;
         public Tile( Texture2D sprite, String letter, SpriteFont font, Body tileBody)
         {
-            
+            usable = false;
             this.tileBody = tileBody;
             this.font = font;
             this.letter = letter;
@@ -32,7 +32,10 @@ namespace WordFlick
       
         public void Update(GameTime gameTime)
         {
-            
+            if (tileAnimation.Position.Y>500)
+            {
+                usable = true;
+            }
             tileAnimation.Position = ConvertUnits.ToDisplayUnits(tileBody.Position);
           
             tileAnimation.angle = tileBody.Rotation;
