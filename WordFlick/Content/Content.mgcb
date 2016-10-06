@@ -41,3 +41,9 @@
 /processorParam:TextureFormat=Color
 /build:slot.png
 
+#begin ArialBig.spritefont
+/importer:FontDescriptionImporter
+/processor:FontDescriptionProcessor
+/processorParam:TextureFormat=Compressed
+/build:ArialBig.spritefont
+

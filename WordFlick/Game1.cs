@@ -28,6 +28,8 @@ namespace WordFlick
         List<Slot> slots;
         List<Tile> tiles;
         SpriteFont tileFont;
+
+        SpriteFont wordFont;
         Texture2D tileTex;
         Random random;
         static public int windowHeight = 800;
@@ -102,6 +104,7 @@ namespace WordFlick
             
             tileTex = Content.Load<Texture2D>("Tile");
             tileFont = Content.Load<SpriteFont>("Arial");
+            wordFont = Content.Load<SpriteFont>("ArialBig");
             // TODO: use this.Content to load your game content here
         }
 
@@ -281,7 +284,7 @@ namespace WordFlick
             {
                 slot.Draw(spriteBatch);
             }
-            spriteBatch.DrawString(tileFont, currentWord, new Vector2(300, 300),
+            spriteBatch.DrawString(wordFont, currentWord, new Vector2(200, 250),
                textColor, 0, new Vector2(0, 0), 1.0f, SpriteEffects.None, 0.5f);
             spriteBatch.Draw(lineTex,new Rectangle(0,500,windowWidth, 1), null,Color.Black,0,
             new Vector2(0, 0),SpriteEffects.None,0);
