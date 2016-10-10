@@ -6,6 +6,7 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Storage;
 using FarseerPhysics.Dynamics;
+using FarseerPhysics.Dynamics.Contacts;
 using FarseerPhysics.Dynamics.Joints;
 using FarseerPhysics.Factories;
 using FarseerPhysics.Controllers;
@@ -18,6 +19,7 @@ namespace WordFlick
     /// </summary>
     public class Game1 : Game
     {
+        int score;
         MouseState mouseState;
         FixedMouseJoint mouseJoint;
         World world;
@@ -142,8 +144,11 @@ namespace WordFlick
         {
             for (int i = 0; i < max; i++)
             {
-                Slot slot = new Slot(slotTex, new Vector2(50 + 100 * i, 400));
+                Vector2 pos = new Vector2(50 + 70 * i, 400);
+                
+                Slot slot = new Slot(slotTex,pos);
                 slots.Add(slot);
+
             }
         }
         String currentWord;
@@ -167,12 +172,36 @@ namespace WordFlick
                 int index = Array.IndexOf(words, currentWord);
                 if (index > 0)
                 {
+                   
                     correctWord = true;
+                   
                     textColor = Color.Green;
                 }
             }
         }
-        public void TileCollision()
+        public void SubmitWord()
+        {
+            if (correctWord == true)
+            {
+
+
+                score += currentWord.Length;
+                for (int i = 0; i < tiles.Count; i++)
+                {
+                    if (tiles[i].inSlot == true)
+                    {
+                        world.RemoveBody(tiles[i].tileBody);
+                        tiles.RemoveAt(i);
+                    }
+                }
+                foreach (Slot slot in slots)
+                {
+                    slot.letter = "";
+                    slot.full = false;
+                }
+            }
+        }
+        public void TileSlotCollision()
         {
             foreach(Tile tile in tiles)
             {
@@ -180,72 +209,174 @@ namespace WordFlick
                 {
                     for (int i = 0; i < slots.Count; i++)
                     {
-                        if (slots[i].full != true)
+                        if (slots[i].full != true&& tile.inSlot!=true)
                         {
-                            if (tile.tileAnimation.hitBox.Intersects(slots[i].slotAnimation.hitBox))
+                            if (tile.tileAnimation.hitBox.Intersects(slots[i].slotAnimation.hitBox)&& tile.timeSinceLastSlot>500)
                             {
                                 slots[i].letter = tile.letter;
+                                tile.inSlot = true;
                                 slots[i].full = true;
-                                tile.tileAnimation.Position = slots[i].slotAnimation.Position;
-                                tile.tileAnimation.angle = 0;
-                                tile.tileBody.Position = ConvertUnits.ToSimUnits(slots[i].slotAnimation.Position.X, slots[i].slotAnimation.Position.Y);
-                                tile.tileBody.Rotation = 0;
-                                tile.tileBody.BodyType = BodyType.Static;
-                                tile.tileBody.IgnoreGravity=true;
-
+                                tile.slotPostition = slots[i].position;
+                                tile.slotNum = i;
+                               
+                               
+                                
                             }
                         }
                     }
                 }
             }
         }
+        public void TileTileCollision()
+        {
+            
+                    for (int i = 0; i < tiles.Count; i++)
+                    {
+                        
+                            if (tiles[i].inSlot == true&& tiles[i].slotNum!=-1)
+                            {
+                                tiles[i].tileBody.OnCollision += TileInSlotCollison;
+                                 
+                        }
+                    }
+                    
+                
+            
+        }
+        public bool TileInSlotCollison(Fixture fixtureA, Fixture fixtureB, Contact contact)
+        {
+            Tile tileA =null;
+            Tile tileB=null;
+            Vector2 contactPos = contact.Manifold.LocalPoint;
+            Vector2 aVel = fixtureA.Body.GetLinearVelocityFromWorldPoint(contactPos);
+            Vector2 bVel = fixtureB.Body.GetLinearVelocityFromWorldPoint(contactPos);
+            Vector2 relVel = aVel - bVel;
+            float force = relVel.Length() * fixtureA.Body.Mass * fixtureB.Body.Mass;
+            if(force>20)
+            {
+                foreach(Tile tile in tiles)
+                {
+                   if(fixtureA.Equals(tile.tileBody.FixtureList[0]))
+                   {
+                       tileA = tile;
+                   }
+                   if (fixtureB.Equals(tile.tileBody.FixtureList[0]))
+                   {
+                       tileB = tile;
+                   }
+                }
+                if(tileA !=null && tileB!=null)
+                {
+                if (tileA.inSlot == true&& tileB.inSlot == false&& tileB.timeSinceLastSlot>500)
+                {
+                    tileA.slotPostition = new Vector2(0, 0);
+                    tileA.inSlot = false;
+                    slots[tileA.slotNum].letter = "";
+                    slots[tileA.slotNum].full = false;
+                    tileA.slotNum = -1;
+
+                }
+                }
+            }
+            return true;
+        }
+        public void TileCleaner()
+        {
+           
+            for (int i = 0; i < tiles.Count; i++)
+            {
+                if (tiles[i].tileAnimation.Position.Y > windowHeight)
+                {
+                    world.RemoveBody(tiles[i].tileBody);
+                    tiles.RemoveAt(i);
+                }
+            }
+        }
+        public void TileInSlotClick()
+        {
+
+            if (mouseState.LeftButton == ButtonState.Pressed && oldMouse.LeftButton == ButtonState.Released )
+            {
+                Vector2 position = ConvertUnits.ToSimUnits(mouseState.Position.ToVector2());
+                 Fixture fixture = world.TestPoint(position);
+                 if (fixture != null)
+                 {
+                     body = fixture.Body;
+                     foreach (Tile tile in tiles)
+                     {
+                         if (tile.tileBody.Equals(body))
+                         {
+                             if (tile.inSlot == true)
+                             {
+                                 tile.slotPostition = new Vector2(0, 0);
+                                 tile.inSlot = false;
+                                 slots[tile.slotNum].letter = "";
+                                 slots[tile.slotNum].full = false;
+                                 tile.slotNum = -1;
+                                 
+                             }
+                         }
+                     }
+                 }
+            }
+
+        }
         public void MouseDrag()
         {
            Vector2 position = ConvertUnits.ToSimUnits(mouseState.Position.ToVector2());
 
-            if (mouseState.LeftButton == ButtonState.Pressed && oldMouse.LeftButton == ButtonState.Released && mouseState.Position.Y > 500)
+            if (mouseState.LeftButton == ButtonState.Pressed && oldMouse.LeftButton == ButtonState.Released)
             {
                 
                 Fixture fixture = world.TestPoint(position);
                 if (fixture != null)
                 {
+                    
                     body = fixture.Body;
-                    mouseJoint = new FixedMouseJoint(body, position);
-                    mouseJoint.MaxForce = 100 * body.Mass;
-                    world.AddJoint(mouseJoint);
-                    body.Awake = true;
-                    foreach(Tile tile in tiles)
+                    if ( ConvertUnits.ToDisplayUnits(body.Position.Y) > 500)
                     {
-                        if(tile.tileBody.Equals(body))
+                        mouseJoint = new FixedMouseJoint(body, position);
+                        mouseJoint.MaxForce = 100 * body.Mass;
+                        world.AddJoint(mouseJoint);
+                        body.Awake = true;
+                        foreach (Tile tile in tiles)
                         {
-                            tile.tileAnimation.color = Color.Green;
+                            if (tile.tileBody.Equals(body))
+                            {
+                                tile.tileAnimation.color = Color.Green;
+                            }
                         }
                     }
                 }
 
             }
-            if (mouseState.LeftButton == ButtonState.Pressed && mouseState.Position.Y > 500)
+            if (body != null)
             {
-                if (mouseJoint != null)
+
+
+                if (mouseState.LeftButton == ButtonState.Pressed && ConvertUnits.ToDisplayUnits(body.Position.Y) > 500)
                 {
-                    mouseJoint.WorldAnchorB = position;
-                }
-                
-            }
-           
-            if (mouseState.LeftButton == ButtonState.Released && oldMouse.LeftButton == ButtonState.Pressed||mouseState.Position.Y <500)
-            {
-                if (mouseJoint != null)
-                {
-                    foreach (Tile tile in tiles)
+                    if (mouseJoint != null)
                     {
-                        if (tile.tileBody.Equals(body))
-                        {
-                            tile.tileAnimation.color = Color.White;
-                        }
+                        mouseJoint.WorldAnchorB = position;
                     }
-                    world.RemoveJoint(mouseJoint);
-                    mouseJoint = null;
+
+                }
+
+                if (mouseState.LeftButton == ButtonState.Released && oldMouse.LeftButton == ButtonState.Pressed || ConvertUnits.ToDisplayUnits(body.Position.Y) < 500)
+                {
+                    if (mouseJoint != null)
+                    {
+                        foreach (Tile tile in tiles)
+                        {
+                            if (tile.tileBody.Equals(body))
+                            {
+                                tile.tileAnimation.color = Color.White;
+                            }
+                        }
+                        world.RemoveJoint(mouseJoint);
+                        mouseJoint = null;
+                    }
                 }
             }
 
@@ -258,7 +389,7 @@ namespace WordFlick
                 Exit();
             oldMouse = mouseState;
             mouseState = Mouse.GetState();
-           
+            
             world.Step(Math.Min((float)gameTime.ElapsedGameTime.TotalSeconds, (1f / 30f)));
             MouseDrag();
            foreach(Slot slot in slots)
@@ -269,8 +400,19 @@ namespace WordFlick
             {
                 tile.Update(gameTime);
             }
-            TileCollision();
+            if(tiles.Count<30)
+            {
+                GenerateTiles(1);
+            }
+            TileInSlotClick();
+            TileSlotCollision();
+            TileTileCollision();
+            TileCleaner();
             TestLetters();
+            if (Keyboard.GetState().IsKeyDown(Keys.Space))
+            {
+                SubmitWord();
+            }
             base.Update(gameTime);
         }
 
@@ -286,6 +428,8 @@ namespace WordFlick
             }
             spriteBatch.DrawString(wordFont, currentWord, new Vector2(200, 250),
                textColor, 0, new Vector2(0, 0), 1.0f, SpriteEffects.None, 0.5f);
+            spriteBatch.DrawString(wordFont, score.ToString(), new Vector2(windowWidth-wordFont.MeasureString(score.ToString()).X, 10),
+              textColor, 0, new Vector2(0, 0), 1.0f, SpriteEffects.None, 0.5f);
             spriteBatch.Draw(lineTex,new Rectangle(0,500,windowWidth, 1), null,Color.Black,0,
             new Vector2(0, 0),SpriteEffects.None,0);
 
